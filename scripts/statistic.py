@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import pprint
-
+import numpy as np
 
 expect = [0, 1]
 result = []
@@ -31,19 +31,35 @@ for r in result:
         '''
         dics[-1].append((num, kernel, user, diff))
 
-pprint.pprint(dics)
+# pprint.pprint(dics)
 
 mean=[]
 
+data=np.array(dics)
+
+print(data[:, 1:2,:])
+
+def outlier_filter(datas, threshold = 2):
+    datas = np.array(datas)
+    z = np.abs((datas - datas.mean()) / datas.std())
+    return datas[z < threshold]
+
+def data_processing(data_set, n):
+    catgories = data_set[0].shape[0]
+    samples = data_set[0].shape[1]
+    final = np.zeros((catgories, samples))
+
+    for c in range(catgories):        
+        for s in range(samples):
+            final[c][s] =                                                    \
+                outlier_filter([data_set[i][c][s] for i in range(n)]).mean()
+    return final
+
 for i in range(101):
-    result_kernel=0
-    result_user=0
-    result_diff=0
-    for j in range(len(dics)):
-        result_kernel+=dics[j][i][1]
-        result_user+=dics[j][i][2]
-        result_diff+=dics[j][i][3]
-    mean.append((i, result_kernel/len(dics), result_user/len(dics), result_diff/len(dics)))
+    kernel_mean = outlier_filter(data[:, i:i+1, 1]).mean()
+    user_mean = outlier_filter(data[:, i:i+1, 2]).mean()
+    diff_mean = outlier_filter(data[:, i:i+1, 3]).mean()
+    mean.append((i, kernel_mean, user_mean, diff_mean))
 
 print("result:")
 pprint.pprint(mean)
