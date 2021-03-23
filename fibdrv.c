@@ -422,6 +422,17 @@ static int fib_release(struct inode *inode, struct file *file)
     return 0;
 }
 
+static ktime_t kt;
+
+static HugeInteger *fib_time_proxy(long long k)
+{
+    kt = ktime_get();
+    HugeInteger *result = fib_sequence(k);
+    kt = ktime_sub(ktime_get(), kt);
+    printk("%d", kt);
+    return result;
+}
+
 static ssize_t fib_read(struct file *file,
                         char *buf,
                         size_t size,
@@ -429,8 +440,8 @@ static ssize_t fib_read(struct file *file,
 {
     // printk("enter cdd_read!\n");
 
-    HugeInteger *result = fib_sequence(*offset);
-    printk("%d\n", result->length);
+    HugeInteger *result = fib_time_proxy(*offset);
+    // printk("%d\n", result->length);
     copy_to_user(buf, result->digits, sizeof(int) * result->length);
     // printk("kernel kbuf content:%lld%lld\n", (long long int)(result.upper),
     // (long long int)(result.lower));
@@ -443,7 +454,7 @@ static ssize_t fib_write(struct file *file,
                          size_t size,
                          loff_t *offset)
 {
-    return 1;
+    return ktime_to_ns(kt);
 }
 
 static loff_t fib_device_lseek(struct file *file, loff_t offset, int orig)
