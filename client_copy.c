@@ -32,32 +32,38 @@ int main()
         perror("Failed to open character device");
         exit(1);
     }
-
-    for (int i = 0; i <= offset; i++) {
+    for (int k = 0; k < 100; k++) {
         long long sz;
         sz = write(fd, write_buf, strlen(write_buf));
         long long kernel_time = sz;
-        printf("Writing to " FIB_DEV ", returned the sequence %lld\n", sz);
-        lseek(fd, i, SEEK_SET);
-        struct timespec start, end;
-        double time_used;
+        for (int i = 0; i <= offset; i++) {
+            // printf("Writing to " FIB_DEV ", returned the sequence %lld\n",
+            // sz);
+            lseek(fd, i, SEEK_SET);
+            struct timespec start, end;
+            double time_used;
 
-        // 計算開始時間
-        clock_gettime(CLOCK_MONOTONIC, &start);
+            // 計算開始時間
+            clock_gettime(CLOCK_MONOTONIC, &start);
 
-        sz = read(fd, buf, 100 * sizeof(int));
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        printf("Reading from " FIB_DEV " at offset %d, returned the sequence ",
-               i);
-        for (int j = sz - 1; j >= 0; j--) {
-            printf("%d", buf[j]);
+            sz = read(fd, buf, 100 * sizeof(int));
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            // printf("Reading from " FIB_DEV " at offset %d, returned the
+            // sequence ",
+            //       i);
+            for (int j = sz - 1; j >= 0; j--) {
+                printf("%d", buf[j]);
+            }
+            printf(".\n");
+            struct timespec temp = diff(start, end);
+            time_used = (double) temp.tv_nsec;
+            sz = write(fd, write_buf, strlen(write_buf));
+            kernel_time = sz;
+
+            printf("Num: %d, kernel: %lld, user: %lf, diff: %lf\n", i,
+                   kernel_time, time_used, time_used - kernel_time);
+            memset(buf, 0, sizeof(int) * 100);
         }
-        printf(".\n");
-        struct timespec temp = diff(start, end);
-        time_used = (double) temp.tv_nsec;
-        printf("kernel: %lld, user: %lf, diff: %lf\n", kernel_time, time_used,
-               time_used - kernel_time);
-        memset(buf, 0, sizeof(int) * 100);
     }
 
     /*for (int i = 0; i <= offset; i++) {
